@@ -19,7 +19,7 @@ trait LayeredInsert[F[_], K, V] extends Insert[F, K, V] {
 object LayeredInsert {
   def fromInserts[F[_], G[_], K, V](inserts: G[Insert[F, K, V]])(implicit F: Monad[F], G: Foldable[G]): LayeredInsert[F, K, V] =
     new LayeredInsert[F, K, V] {
-      override final val FApplicative: Applicative[F] =
+      override final protected val FApplicative: Applicative[F] =
         F
 
       override final def layeredInsert_(shouldInsertToLayerN: Int => F[Boolean])(k: K, v: V): F[Unit] =

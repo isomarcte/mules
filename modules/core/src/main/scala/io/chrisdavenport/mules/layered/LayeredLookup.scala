@@ -15,7 +15,7 @@ trait LayeredLookup[F[_], K, V] extends Lookup[F, K, V] {
 object LayeredLookup {
   def fromLookups[F[_], G[_], K, V](lookups: G[Lookup[F, K, V]])(implicit F: Monad[F], G: Foldable[G]): LayeredLookup[F, K, V] =
     new LayeredLookup[F, K, V] {
-      override final val FFunctor: Functor[F] = F
+      override final protected val FFunctor: Functor[F] = F
 
       override final def layeredLookup(k: K): F[Option[LayeredValue[V]]] =
         lookups.foldLeftM[F, (Int, Option[LayeredValue[V]])](Tuple2(0, Option.empty[LayeredValue[V]])){
