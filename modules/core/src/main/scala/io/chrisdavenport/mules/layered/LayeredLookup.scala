@@ -32,7 +32,7 @@ object LayeredLookup {
             // implementations `F` will be a side-effecting type,
             // e.g. `IO`. In that case, when the caller only wants the _first_
             // cache value we don't actually want to keep calling the later
-            // caches after we've already got a result.
+            // caches after we've already found a result.
             F.pure(Tuple2(idx + 1, result))
           case ((idx, _), lookup) =>
             lookup.lookup(k).map((result: Option[V]) =>
