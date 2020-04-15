@@ -7,9 +7,17 @@ import io.chrisdavenport.mules._
 trait LayeredLookup[F[_], K, V] extends Lookup[F, K, V] {
   protected def FFunctor: Functor[F]
 
+  def layeredLookup_[G[_]: Alternative](k: K): F[G[LayeredValue[V]]]
+
+  def layeredLookup(k: K): F[Option[LayeredValue[V]]] =
+    this.layeredLookup_[Option](k)
+
+  final def lookupInAllLayers(k: K): F[List[LayeredValue[V]]] =
+    this.layeredLookup_[List](k)
+
   override final def lookup(k: K): F[Option[V]] =
     FFunctor.map(this.layeredLookup(k))(_.map(_.value))
-  def layeredLookup(k: K): F[Option[LayeredValue[V]]]
+
 }
 
 object LayeredLookup {
@@ -19,16 +27,30 @@ object LayeredLookup {
 
       override final def layeredLookup(k: K): F[Option[LayeredValue[V]]] =
         lookups.foldLeftM[F, (Int, Option[LayeredValue[V]])](Tuple2(0, Option.empty[LayeredValue[V]])){
-          case (result @ (_, Some(_)), _) =>
-            F.pure(result)
-          case ((idx, _), value) =>
-            value.lookup(k).map(_.fold(
-              (idx + 1, Option.empty[LayeredValue[V]])
-            )((result: V) =>
-              // -1 because the index should never be used after this
-              // point. Thus, -1 simply becomes an oracle for debugging.
-              (-1, Some(LayeredValue(idx, result)))
-            ))
+          case ((idx, result @ Some(_)), _) =>
+            // Short circuit. It is reasonable to assume that in most
+            // implementations `F` will be a side-effecting type,
+            // e.g. `IO`. In that case, when the caller only wants the _first_
+            // cache value we don't actually want to keep calling the later
+            // caches after we've already got a result.
+            F.pure(Tuple2(idx + 1, result))
+          case ((idx, _), lookup) =>
+            lookup.lookup(k).map((result: Option[V]) =>
+              (idx + 1, result.map(LayeredValue(idx, _))))
         }.map(_._2)
+
+      override final def layeredLookup_[H[_]: Alternative](k: K): F[H[LayeredValue[V]]] = {
+        val empty: H[LayeredValue[V]] = Alternative[H].empty
+        lookups.foldLeftM[F, (Int, H[LayeredValue[V]])](Tuple2(0, empty)){
+          case ((idx, acc), lookup) =>
+            lookup.lookup(k).map(_.fold(
+              empty
+            )((result: V) =>
+              Applicative[H].pure(LayeredValue(idx, result))
+            )).map((result: H[LayeredValue[V]]) =>
+              (idx + 1, acc <+> result)
+            )
+        }.map(_._2)
+      }
     }
 }
