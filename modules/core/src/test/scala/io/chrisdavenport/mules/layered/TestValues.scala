@@ -11,6 +11,6 @@ object TestValues {
   val testValue0: Int = 0
   val testValue1: Int = 1
 
-  def cacheLayer(implicit T: Timer[IO]): IO[Cache[IO, String, Int]] =
+  def cacheLayer(implicit T: Timer[IO]): IO[LifetimeCache[IO, String, Int]] =
     MemoryCache.ofSingleImmutableMap[IO, String, Int](None)(Sync[IO], T.clock)
 }

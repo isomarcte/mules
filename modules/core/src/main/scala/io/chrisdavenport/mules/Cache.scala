@@ -32,7 +32,7 @@ trait LifetimeInsert[F[_], K, V] extends Insert[F, K, V]{
     **/
   def insertWithTimeout(optionTimeout: Option[TimeSpec])(k: K, v: V): F[Unit]
 
-  override def insert(k: K, v: V): F[Unit] =
+  override final def insert(k: K, v: V): F[Unit] =
     this.insertWithTimeout(this.defaultExpiration)(k, v)
 }
 

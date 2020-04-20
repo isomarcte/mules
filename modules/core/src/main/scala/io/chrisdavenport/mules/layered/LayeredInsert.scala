@@ -11,9 +11,6 @@ trait LayeredInsert[F[_], K, V] extends Insert[F, K, V] {
 
   final def layeredInsert(shouldInsertToLayerN: Int => Boolean)(k: K, v: V): F[Unit] =
     this.layeredInsert_((layer: Int) => this.FApplicative.pure(shouldInsertToLayerN(layer)))(k, v)
-
-  override def insert(k: K, v: V): F[Unit] =
-    this.layeredInsert(Function.const(true))(k, v)
 }
 
 object LayeredInsert {
@@ -30,5 +27,8 @@ object LayeredInsert {
               F.unit
             ) *> F.pure(layer + 1)
         }.void
+
+      override final def insert(k: K, v: V): F[Unit] =
+        this.layeredInsert(Function.const(true))(k, v)
     }
 }
