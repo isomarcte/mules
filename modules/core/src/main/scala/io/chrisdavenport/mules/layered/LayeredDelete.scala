@@ -13,7 +13,7 @@ trait LayeredDelete[F[_], K] extends Delete[F, K] {
   final def layeredDelete(shouldDeleteFromLayerN: Int => Boolean)(k: K): F[Unit] =
     this.layeredDelete_((layer: Int) => this.FApplicative.pure(shouldDeleteFromLayerN(layer)))(k)
 
-  override def delete(k: K): F[Unit] =
+  override final def delete(k: K): F[Unit] =
     this.layeredDelete(Function.const(true))(k)
 }
 

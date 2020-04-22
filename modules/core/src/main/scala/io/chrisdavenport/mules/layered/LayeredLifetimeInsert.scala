@@ -18,13 +18,14 @@ trait LayeredLifetimeInsert[F[_], K, V] extends LifetimeInsert[F, K, V] with Lay
       )
     )(k, v)
 
-  override final def insertWithTimeout(optionTimeout: Option[TimeSpec])(k: K, v: V): F[Unit] = this.layeredInsertWithTimeout(
-    LayerLifetimeInsertInformation(
-      Function.const(FApplicative.pure(true)),
-      Function.const(FApplicative.pure(optionTimeout)
+  override final def insertWithTimeout(optionTimeout: Option[TimeSpec])(k: K, v: V): F[Unit] =
+    this.layeredInsertWithTimeout(
+      LayerLifetimeInsertInformation(
+        Function.const(FApplicative.pure(true)),
+        Function.const(FApplicative.pure(optionTimeout)
+        )
       )
-    )
-  )(k, v)
+    )(k, v)
 }
 
 object LayeredLifetimeInsert {
